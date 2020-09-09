@@ -1,0 +1,43 @@
+{
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "C/C++: g++ build active file",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-std=c++11",
+                "`pkg-config", "--cflags", "--libs", "opencv`",
+
+                "-g",
+                "main.cpp",
+                "include/opengl/glad/src/glad.cpp",
+                "render.cpp",
+                "PlyIO.cpp",
+                "include/log/log.cpp",
+                "include/log/timestamp.cpp",
+                
+                "-I", "./include",
+                "-I", "./include/opengl",
+                "-I", "./include/opengl/glad/include",
+
+                "-lglfw3", "-lGL", "-lm", "-lXrandr", "-lXi", "-lX11", 
+                "-lXxf86vm", "-lpthread", "-ldl", "-lXinerama", "-lXcursor",
+                "-llog4cpp",
+
+                "-o",
+                "main"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ],
+    "version": "2.0.0"
+}
