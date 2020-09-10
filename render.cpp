@@ -9,9 +9,9 @@ void modelRender::render(unsigned char* imgData, float *vertices, unsigned int *
     glBindTexture(GL_TEXTURE_2D, textureID); // bind Texture
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // bind frame buffer to default display
 
-    while (!glfwWindowShouldClose(window))
-    {
-        processInput(window);
+    //while (!glfwWindowShouldClose(window))
+    //{
+        //processInput(window);
 
         // render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -42,7 +42,7 @@ void modelRender::render(unsigned char* imgData, float *vertices, unsigned int *
         glfwSwapBuffers(window);
         glfwPollEvents();
         //break;
-    }
+    //}
     //readScreenPixel();
 
     // optional: de-allocate all resources once they've outlived their purpose:
@@ -78,9 +78,13 @@ void modelRender::generateTexture(unsigned char* imgData){
 
     glBindVertexArray(VAO[0]);
     glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+    LOG_INFO("glBUfferData VBO");
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    LOG_INFO("finish glBUfferData VBO");
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
+    LOG_INFO("glBUfferData EBO");
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    LOG_INFO("finish glBUfferData EBO");
     // position attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -148,7 +152,7 @@ void modelRender::glInit(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 
     // glfw window creation
     window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "LearnOpenGL", NULL, NULL);
