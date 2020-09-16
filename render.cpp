@@ -1,103 +1,41 @@
 #include "render.h"
 
 
-void modelRender::render(unsigned char* imgData, float *vertices, unsigned int *faces, int Vn, int Fn){
-    LOG_INFO("Begin to render one frame");
-    generateTexture(imgData);
-    
-    generateModel(vertices, faces, Vn, Fn);
-    glBindTexture(GL_TEXTURE_2D, textureID); // bind Texture
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); // bind frame buffer to default display
+void modelRender::render(unsigned char* imgData){ 
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
 
-    //while (!glfwWindowShouldClose(window))
-    //{
-        //processInput(window);
+    LOG_INFO("Begin to generate Texture");
+    generateTexture(imgData);// Bind framebuffer to FBOID, and generate texture
+    LOG_INFO("Finish generating Texture");
 
-        // render
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glClear(GL_DEPTH_BUFFER_BIT);
 
-        // texture render
-        shaderTexture->use();
-        glBindVertexArray(VAO[0]);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    LOG_INFO("Begin to generate Model");
+    generateModel();
+    LOG_INFO("Finish generating Model");
 
-        glEnable(GL_DEPTH_TEST);
-        glClear(GL_DEPTH_BUFFER_BIT);
-        
-        // model render
-        shaderModel->use();
-        glBindVertexArray(VAO[1]);
-        glm::mat4 projection = glm::perspective(glm::radians(fov), (float)WIN_WIDTH / (float)WIN_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = glm::lookAt(cameraPos, cameraTar, cameraUp);
-        shaderModel->setMat4("projection", projection);
-        shaderModel->setMat4("view", view);
-        shaderModel->setMat4("model", glm::mat4(1.0f));
+    shaderModel->use();
+    glm::mat4 projection = glm::perspective(glm::radians(fov), (float)WIN_WIDTH / (float)WIN_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = glm::lookAt(cameraPos, cameraTar, cameraUp);
+    shaderModel->setMat4("projection", projection);
+    shaderModel->setMat4("view", view);
+    shaderModel->setMat4("model", glm::mat4(1.0f));
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BARRIER_BIT, EBO[1]);
-        glDrawElements(GL_TRIANGLES, Fn, GL_UNSIGNED_INT, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBOID);
+    glDrawElements(GL_TRIANGLES, Fn, GL_UNSIGNED_INT, 0);
 
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-        //break;
-    //}
-    //readScreenPixel();
+    eglSwapBuffers(eglDpy, eglSurf);
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO[1]);
-    glDeleteBuffers(1, &VBO[1]);
-    glDeleteBuffers(1, &EBO[1]);
-
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
-    //glfwTerminate();
+    readScreenPixel("result.png");
+    eglTerminate(eglDpy);
 }
 
 
 void modelRender::generateTexture(unsigned char* imgData){
-    LOG_INFO("Start generating texture");
-    float vertices[] = {
-        // positions          // colors           // texture coords
-         1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
-         1.0f, -1.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-        -1.0f, -1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
-        -1.0f,  1.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
-    };
-    unsigned int indices[] = {
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
-    };
-
-    glGenVertexArrays(1, &VAO[0]);
-    glGenBuffers(1, &VBO[0]);
-    glGenBuffers(1, &EBO[0]);
-    LOG_INFO("Finish generating buffers");
-
-    glBindVertexArray(VAO[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-    LOG_INFO("glBUfferData VBO");
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    LOG_INFO("finish glBUfferData VBO");
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
-    LOG_INFO("glBUfferData EBO");
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    LOG_INFO("finish glBUfferData EBO");
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    // texture coord attribute
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    // load and create a texture 
-    // -------------------------
-    LOG_INFO("Start to gen texure");
+    // load and create a texture
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
     // set the texture wrapping parameters
@@ -106,38 +44,32 @@ void modelRender::generateTexture(unsigned char* imgData){
     // set texture filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    LOG_INFO("Set texture parameter");
-
-    int width = 3840;
-    int height = 2160;
 
     if (imgData){
         LOG_INFO("glTexImage2D");
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, imgData);
-        LOG_INFO("Finish glTexImage2D");
-        //glGenerateMipmap(GL_TEXTURE_2D);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, imgData);
+        LOG_INFO("glTexImage2D finish");
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureID, 0);
+        LOG_INFO("glFramebufferTexture2D finish");
+        // glGenerateMipmap(GL_TEXTURE_2D);
     }
     else{
         std::cout << "Failed to load texture" << std::endl;
     }
-    LOG_INFO("Finish generating texture");
 }
 
 
-void modelRender::generateModel(float *vertices, unsigned int *faces, int Vn, int Fn){
+void modelRender::generateModel(){
     glGenVertexArrays(1, &VAO[1]);
     glGenBuffers(1, &VBO[1]);
     glGenBuffers(1, &EBO[1]);
 
     glBindVertexArray(VAO[1]);
     glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-    LOG_INFO("Model vertices glBufferData");
     glBufferData(GL_ARRAY_BUFFER, 6*4*Vn, vertices, GL_STATIC_DRAW);
     
-    LOG_INFO("Model faces glBufferData");
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3*4*3*Fn, faces, GL_STATIC_DRAW);
-    LOG_INFO("Model glBufferData finish");
 
     // configure vertex attribute: position and color
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(float), (void*)0);
@@ -147,25 +79,61 @@ void modelRender::generateModel(float *vertices, unsigned int *faces, int Vn, in
 }
 
 
+void modelRender::generateFrameBuffer(){
+    glGenFramebuffers(1, &FBOID);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBOID);
+
+    // create a color attachment texture
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureID, 0);
+
+    // create depth and stencil attachment
+    glGenRenderbuffers(1, &RBOID);
+    glBindRenderbuffer(GL_RENDERBUFFER, RBOID);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT); // use a single renderbuffer object for both a depth AND stencil buffer.
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBOID); // now actually attach it
+
+    // check frame buffer status
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(status != GL_FRAMEBUFFER_COMPLETE) {
+        printf("Problem with OpenGL framebuffer after specifying color render buffer: \n%x\n", status);
+    } else {
+        printf("FBO creation succedded\n");
+    }
+}
+
+
 void modelRender::glInit(){
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+    // 1. Initialize EGL
+    eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
-    // glfw window creation
-    window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL){
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
+    EGLint major, minor;
+    if(!eglInitialize(eglDpy, &major, &minor)){
+        std::printf("Failed to init\n");
     }
-    glfwMakeContextCurrent(window);
 
-    // glad: load all OpenGL function pointers
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+    // 2. Select an appropriate configuration
+    EGLint numConfigs;
+    EGLConfig eglCfg;
+
+    eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+
+    eglSurf = eglCreatePbufferSurface(eglDpy, eglCfg, pbufferAttribs); // 3. Create a surface
+    eglBindAPI(EGL_OPENGL_API); // 4. Bind the API
+
+    // 5. Create a context and make it current
+    eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT, NULL);
+
+    eglMakeCurrent(eglDpy, eglSurf, eglSurf, eglCtx);
+    
+    if (!gladLoadGLLoader((GLADloadproc)eglGetProcAddress)){ // glad: load all OpenGL function pointers
         std::cout << "Failed to initialize GLAD" << std::endl;
-    }
+    }  
+    generateFrameBuffer();
 }
 
 
@@ -206,45 +174,51 @@ void modelRender::processInput(GLFWwindow *window)
 }
 
 
-void modelRender::readScreenPixel(){
+void modelRender::readScreenPixel(const char* filename){
+    LOG_INFO("Begin to read screen pixel");
     unsigned int readBuffer;
     glGenBuffers(1, &readBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, readBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * WIN_WIDTH * WIN_HEIGHT * 3, NULL, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, readBuffer);
     glReadPixels(0, 0, WIN_WIDTH, WIN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
     uchar *data = (uchar *)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+    LOG_INFO("Finish rendering one frame");
+
     cv::Mat img(WIN_HEIGHT, WIN_WIDTH, CV_8UC3);
     for(int i=0; i<WIN_HEIGHT; i++){
         for(int j=0; j<WIN_WIDTH; j++){
             int pixIdx = (WIN_HEIGHT - i - 1) * WIN_WIDTH + j;
-            //std::printf("%d %d | %u %u %u\n", i, j, data[3*pixIdx + 0], data[3*pixIdx + 1], data[3*pixIdx + 2]);
             img.at<cv::Vec3b>(i, j)[0] = data[3*pixIdx + 0];
             img.at<cv::Vec3b>(i, j)[1] = data[3*pixIdx + 1];
             img.at<cv::Vec3b>(i, j)[2] = data[3*pixIdx + 2];
         }
     }
-    cv::imwrite("img.png", img);
+    cv::imwrite(filename, img);
     glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
-
-    //glReadPixels(0, 0, WIN_WIDTH, WIN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, (uchar *)dataRead);
 }
 
 
-modelRender::modelRender(){
-    WIN_WIDTH = 800;
-    WIN_HEIGHT = 600;
+modelRender::modelRender(float *vertices, unsigned int *faces, int Vn, int Fn){
+    WIN_WIDTH = 3840;
+    WIN_HEIGHT = 2160;
+    SCR_WIDTH = WIN_WIDTH;
+    SCR_HEIGHT = WIN_HEIGHT;
     this->textureID = 0;
-    cameraPos   = glm::vec3(0.0f, 0.0f, 20.0f);
-    cameraTar = glm::vec3(0.0f, 0.0f, 0.0f);
-    cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
+    cameraPos = glm::vec3(16.0f, -11.0f, -3.9f);
+    cameraTar = glm::vec3(-10.0f, 0.0f, 0.0f);
+    cameraUp = glm::vec3(-0.0132f, -0.347f, 0.9379f);
 
     glInit();
     shaderTexture = new Shader("./include/opengl/texture.vs", "./include/opengl/texture.fs"); 
     shaderModel = new Shader("./include/opengl/model.vs", "./include/opengl/model.fs");
+
+    this->vertices = vertices;
+    this->faces = faces;
+    this->Vn = Vn;
+    this->Fn = Fn;
 }
 
 

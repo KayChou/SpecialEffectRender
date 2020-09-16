@@ -1,3 +1,4 @@
+#include <iostream>
 #include "YUV_IO.hpp"
 #include "PlyIO.h"
 #include "render.h"
@@ -5,11 +6,9 @@
 #define width 3840
 #define height 2160
 
-timeval start, end;
-
-
-int main(){
-    // Load uyvy frame and convert to RGB
+int main(int argc, char *argv[])
+{
+  // Load uyvy frame and convert to RGB
     LOG_INFO("main entry");
     uint8_t *data_uyvy = new uint8_t[width * height * 2];
     Load_uyvy("datas/test.yuv", data_uyvy);
@@ -50,9 +49,11 @@ int main(){
             vertices[6*i + 5] = 0.0;
         }
     }
-    modelRender render;
-    render.render(data, vertices, faces, verts.size(), colors.size());
 
-    delete data_uyvy;
-    delete faces;
+
+  // from now on use your OpenGL context
+  modelRender render(vertices, faces, verts.size(), colors.size());
+  render.render(data);
+  delete faces;
+  return 0;
 }
