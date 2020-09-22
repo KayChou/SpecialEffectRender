@@ -6,9 +6,44 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include "typedefs.h"
 
 static const unsigned int MAX_COMMENT_SIZE = 256;
+
+typedef struct Point3f
+{
+	Point3f(){
+		this->X = 0;
+		this->Y = 0;
+		this->Z = 0;
+	}
+	Point3f(float X, float Y, float Z){
+		this->X = X;
+		this->Y = Y;
+		this->Z = Z;
+	}
+	float X;
+	float Y;
+	float Z;
+} Point3f;
+
+
+typedef struct RGB
+{
+    RGB() {
+        this->R = 0;
+        this->G = 0;
+        this->B = 0;
+    }
+	unsigned char R, G, B;
+} RGB;
+
+
+enum PLYFormat {
+    BINARY_BIG_ENDIAN_1,
+    BINARY_LITTLE_ENDIAN_1,
+    ASCII_1
+};
+
 
 template <class T>
 void bigLittleEndianSwap (T * v, unsigned int numOfElements) {
@@ -23,6 +58,7 @@ void bigLittleEndianSwap (T * v, unsigned int numOfElements) {
         tmp[offset+2] = c;
     }
 }
+
 
 //==========================================================================
 // parase plyFile header
@@ -128,11 +164,10 @@ bool parasePlyHeader(std::ifstream &in, const char* filename, unsigned int &vn, 
 }
 
 
-
 //==========================================================================
 // read plyFile: parase header and read datas
 //==========================================================================
-bool readPlyFile(const char* filename, float *vertices, unsigned int *faces, unsigned int &Vn, unsigned int &Fn)
+bool loadPlyFile(const char* filename, float *vertices, unsigned int *faces, unsigned int &Vn, unsigned int &Fn)
 {
     unsigned int numVertProperties=0;
     int headerSize=0;

@@ -1,6 +1,6 @@
 #include <iostream>
 #include "YUV_IO.hpp"
-#include "PlyIO.h"
+#include "PLYIO.h"
 #include "render.h"
 
 #define width 3840
@@ -30,11 +30,13 @@ int main(int argc, char *argv[])
     unsigned int Vn = 0, Fn = 0;
     unsigned int *faces = new unsigned int[5000000];
     float *vertices = new float[5000000];
-    readPlyFile("./datas/AH-64-vertColor.ply", vertices, faces, Vn, Fn);
+    loadPlyFile("./datas/AH-64.ply", vertices, faces, Vn, Fn);
 
     // from now on use your OpenGL context
     modelRender render(vertices, faces, Vn, Fn);
     render.render(data);
+
+    delete vertices;
     delete faces;
     return 0;
 }
