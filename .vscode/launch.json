@@ -8,7 +8,7 @@
             "name": "g++ - Build and debug active file",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "program": "/home/benjamin/Workspace/SpecialEffectsRender/main",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

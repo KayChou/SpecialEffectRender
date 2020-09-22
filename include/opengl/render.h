@@ -83,4 +83,5 @@ public:
     void generateModel();
     void generateTexture(unsigned char* imgData);
     void render(unsigned char *imgData);
+    void BindModel();
 };

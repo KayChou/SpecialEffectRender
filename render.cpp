@@ -2,6 +2,7 @@
 
 
 void modelRender::render(unsigned char* imgData){ 
+    LOG_INFO("Begin to render one frame =========== ")
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
@@ -14,7 +15,7 @@ void modelRender::render(unsigned char* imgData){
     glClear(GL_DEPTH_BUFFER_BIT);
 
     LOG_INFO("Begin to generate Model");
-    generateModel();
+    BindModel();
     LOG_INFO("Finish generating Model");
 
     shaderModel->use();
@@ -30,7 +31,6 @@ void modelRender::render(unsigned char* imgData){
     eglSwapBuffers(eglDpy, eglSurf);
 
     readScreenPixel("result.png");
-    eglTerminate(eglDpy);
 }
 
 
@@ -66,16 +66,36 @@ void modelRender::generateModel(){
 
     glBindVertexArray(VAO[1]);
     glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+    LOG_INFO("transfer vertices data to GPU");
     glBufferData(GL_ARRAY_BUFFER, 6*4*Vn, vertices, GL_STATIC_DRAW);
+    LOG_INFO("finish transfering vertices data to GPU");
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[1]);
+    LOG_INFO("transfer faces data to GPU");
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3*4*3*Fn, faces, GL_STATIC_DRAW);
+    LOG_INFO("finish transferring faces data to GPU");
 
     // configure vertex attribute: position and color
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+}
+
+
+void modelRender::BindModel(){
+
+    glBindVertexArray(VAO[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[1]);
+
+    // configure vertex attribute: position and color
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
 }
 
 
@@ -179,13 +199,17 @@ void modelRender::readScreenPixel(const char* filename){
     unsigned int readBuffer;
     glGenBuffers(1, &readBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, readBuffer);
+    LOG_INFO("glBufferData");
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * WIN_WIDTH * WIN_HEIGHT * 3, NULL, GL_DYNAMIC_DRAW);
+    LOG_INFO("finish glBufferData");
 
     glBindBuffer(GL_PIXEL_PACK_BUFFER, readBuffer);
+    LOG_INFO("glReadPixels");
     glReadPixels(0, 0, WIN_WIDTH, WIN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    LOG_INFO("finish glReadPixels");
 
     uchar *data = (uchar *)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
-    LOG_INFO("Finish rendering one frame");
+    LOG_INFO("Finish rendering one frame ======");
 
     cv::Mat img(WIN_HEIGHT, WIN_WIDTH, CV_8UC3);
     for(int i=0; i<WIN_HEIGHT; i++){
@@ -219,10 +243,13 @@ modelRender::modelRender(float *vertices, unsigned int *faces, int Vn, int Fn){
     this->faces = faces;
     this->Vn = Vn;
     this->Fn = Fn;
+
+    generateModel();
 }
 
 
 modelRender::~modelRender(){
     delete shaderModel;
     delete shaderTexture;
+    eglTerminate(eglDpy);
 }

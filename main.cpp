@@ -27,33 +27,14 @@ int main(int argc, char *argv[])
     }
 
     // load 3D model
-    std::vector<Point3f> verts;
-    std::vector<RGB> colors;
-    unsigned int *faces = new unsigned int[500000];
-    //readPlyFile("./datas/pointcloud.ply", verts, colors);
-    readPlyFile("./datas/AH-64-vertColor.ply", verts, colors, faces);
+    unsigned int Vn = 0, Fn = 0;
+    unsigned int *faces = new unsigned int[5000000];
+    float *vertices = new float[5000000];
+    readPlyFile("./datas/AH-64-vertColor.ply", vertices, faces, Vn, Fn);
 
-    float *vertices = new float[6 * verts.size()];
-    for(int i=0; i<verts.size(); i++){
-        vertices[6*i] = verts[i].X;
-        vertices[6*i + 1] = verts[i].Y;
-        vertices[6*i + 2] = verts[i].Z;
-        if(colors.size() == verts.size()){
-            vertices[6*i + 3] = (float)(colors[i].R) / 255.0f;
-            vertices[6*i + 4] = (float)(colors[i].G) / 255.0f;
-            vertices[6*i + 5] = (float)(colors[i].B) / 255.0f;
-        }
-        else{
-            vertices[6*i + 3] = 1.0;
-            vertices[6*i + 4] = 0.0;
-            vertices[6*i + 5] = 0.0;
-        }
-    }
-
-
-  // from now on use your OpenGL context
-  modelRender render(vertices, faces, verts.size(), colors.size());
-  render.render(data);
-  delete faces;
-  return 0;
+    // from now on use your OpenGL context
+    modelRender render(vertices, faces, Vn, Fn);
+    render.render(data);
+    delete faces;
+    return 0;
 }
