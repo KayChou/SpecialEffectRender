@@ -48,6 +48,7 @@ void modelRender::generateTexture(unsigned char* imgData){
     if (imgData){
         LOG_INFO("glTexImage2D");
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, imgData);
+        
         LOG_INFO("glTexImage2D finish");
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureID, 0);
         LOG_INFO("glFramebufferTexture2D finish");
@@ -236,8 +237,14 @@ modelRender::modelRender(float *vertices, unsigned int *faces, int Vn, int Fn){
     cameraUp = glm::vec3(-0.0132f, -0.347f, 0.9379f);
 
     glInit();
+#ifdef CMAKE
+    shaderTexture = new Shader("../include/opengl/texture.vs", "../include/opengl/texture.fs"); 
+    shaderModel = new Shader("../include/opengl/model.vs", "../include/opengl/model.fs");
+#else
     shaderTexture = new Shader("./include/opengl/texture.vs", "./include/opengl/texture.fs"); 
     shaderModel = new Shader("./include/opengl/model.vs", "./include/opengl/model.fs");
+#endif
+    
 
     this->vertices = vertices;
     this->faces = faces;
